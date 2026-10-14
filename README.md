@@ -1,52 +1,28 @@
-# Bart — веб-ИИ помощник
+# Bart AI — версия для Vercel
 
-Адаптивный тёмный интерфейс Bart для ПК и телефона. Использует предоставленный логотип; зелёный цвет оставлен логотипу, интерфейс графитовый с фиолетовыми акцентами.
+Это не GitHub Pages-проект: браузерная часть + защищённые серверные функции `/api/*`. Для чата нужен Vercel (или другой хостинг с serverless functions). На GitHub Pages запрос `/api/chat` не заработает, потому что Pages не запускает Node.js-функции.
 
-## Уже реализовано
-- Адаптивный интерфейс, чат и история в текущей сессии.
-- Подключение к Groq через серверный endpoint `/api/chat` — ключ хранится на сервере, а не в браузере.
-- Режимы обычный / анализ / код.
-- Прикрепление нескольких изображений и текстовых файлов; изображения передаются vision-модели, если выбрана совместимая модель.
-- Firebase Authentication: email+пароль, письмо подтверждения, вход по телефону через SMS и reCAPTCHA.
-- Сохранение истории в Firestore для авторизованного пользователя.
-- Макет настроек и тёмная/светлая тема.
+## Уже подключено в коде
+- Firebase Web SDK с конфигурацией проекта `bart-9bc5e`.
+- Firebase email/password, письмо подтверждения email, вход по телефону/SMS и reCAPTCHA (если включены способы входа в Firebase Console).
+- Firestore история чатов и Realtime Database presence.
+- Groq chat API через серверный `/api/chat`; ключ хранится только в серверных переменных Vercel.
+- Анализ изображений при выборе доступной vision-модели Groq и обработка текстовых файлов.
 
-## Важно о ключах
-Ключи из присланного ZIP и текстового файла считаются раскрытыми. Отзовите/пересоздайте их в панелях провайдеров, а новые значения храните только в переменных окружения хостинга. Не коммитьте `.env`.
+## Запуск
+1. Загрузите файлы репозитория на GitHub.
+2. Импортируйте репозиторий в Vercel как Vite-проект.
+3. Vercel → Settings → Environment Variables: добавьте `GROQ_API_KEY` (НОВЫЙ ключ после отзыва старого) и `GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct`.
+4. Redeploy.
+5. Firebase Console → Authentication → Sign-in method: включите Email/Password и Phone. В Authentication → Settings → Authorized domains добавьте домен Vercel.
+6. Создайте Firestore Database и примените `firestore.rules`. Для Realtime Database примените `database.rules.json`.
 
-## Запуск локально
-Нужен Node.js 20+.
+Firebase web config не является секретом доступа сам по себе; безопасность данных обеспечивают Authentication и правила базы. Не помещайте ключи Groq, Alibaba или другие серверные API-ключи в `src.js`, GitHub или публичный `.env`.
 
-1. Распакуйте архив и откройте папку в терминале.
-2. Выполните `npm install`.
-3. Скопируйте `.env.example` в `.env.local` и добавьте новый `GROQ_API_KEY`.
-4. Для аккаунтов заполните `VITE_FIREBASE_*` из Firebase Console → Project settings → Your apps → Web app.
-5. Выполните `npm run dev`.
+## Чего пока нет
+- GitHub Pages не подходит для AI API. Используйте Vercel.
+- Image generation и web search не подключены: переданный идентификатор SambaNova — это ID модели/ресурса, а не подтверждённый API-ключ и endpoint генерации изображений. Для Alibaba AccessKey нужно проверить, какой именно API-продукт и endpoint включён. Код не должен притворяться, что генерация работает.
+- PDF/DOCX: полноценное извлечение текста пока не реализовано.
 
-Функции `/api/*` — serverless endpoints Vercel. Для локального тестирования API рекомендуется `vercel dev` (после `npm i -g vercel` и `vercel login`) вместо одного `vite dev`.
-
-## Развёртывание
-Рекомендуется GitHub + Vercel:
-1. Создайте репозиторий и загрузите файлы.
-2. Импортируйте репозиторий в Vercel; Framework Preset: Vite.
-3. В Project Settings → Environment Variables задайте `GROQ_API_KEY`, `GROQ_MODEL` и все `VITE_FIREBASE_*`, включая `VITE_FIREBASE_DATABASE_URL` для Realtime Database.
-4. Redeploy после добавления переменных.
-
-Обычный GitHub Pages не исполняет серверные API-функции. Для API с секретными ключами нужен Vercel, Netlify Functions или собственный backend.
-
-## Firebase
-1. Включите Authentication → Sign-in method → Email/Password и Phone.
-2. Authentication → Settings → Authorized domains: добавьте домен Vercel и localhost для разработки.
-3. В Firebase Console создайте Firestore Database и опубликуйте `firestore.rules`.
-4. Для SMS-тестирования настройте reCAPTCHA и при необходимости тестовые номера Firebase.
-5. При наличии `VITE_FIREBASE_DATABASE_URL` приложение также записывает presence/lastSeen пользователя в Realtime Database. Загрузите `database.rules.json` в Realtime Database → Rules.
-6. Email-подтверждение использует стандартное письмо Firebase со ссылкой. Если нужна именно короткая цифровая ссылка/код, потребуется отдельный email action-code flow.
-
-Firestore сохраняет чаты в `users/{uid}/chats/{chatId}`. Не используйте открытые правила `allow read, write: if true`.
-
-## Известные ограничения, не маскируемые под готовые функции
-- Генерация новых изображений не включена: из присланных материалов нельзя достоверно установить рабочий image-generation endpoint/model. Endpoint `/api/generate-image` честно возвращает `501`, вместо ложного результата. После выбора совместимого провайдера его можно подключить на сервере.
-- Веб-поиск показывает подсказку, пока не подключён поисковый API.
-- PDF/DOCX не проходят полноценное извлечение текста в этой версии; обычный текст, код, JSON, CSV, Markdown и изображения обрабатываются браузером.
-- Для Vision укажите совместимую модель Groq, например `meta-llama/llama-4-scout-17b-16e-instruct`, и проверьте её доступность для своего аккаунта.
-- В продакшене endpoint следует дополнительно защитить Firebase ID-token verification, лимитами запросов и ограничением размера запросов. UI отправляет токен, но шаблон API пока не валидирует его на сервере.
+## Ключи безопасности
+Поскольку ранее отправленные Groq, Alibaba и imgbb ключи были раскрыты в переписке, отзовите/пересоздайте их в кабинетах провайдеров. Вставляйте новые значения только в Vercel Environment Variables.

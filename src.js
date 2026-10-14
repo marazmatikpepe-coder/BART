@@ -8,7 +8,16 @@ import DOMPurify from 'dompurify';
 
 const $ = (s,root=document)=>root.querySelector(s);
 const logo='https://i.ibb.co/1pCX2Nr/image-Photoroom.png';
-const firebaseConfig={apiKey:import.meta.env.VITE_FIREBASE_API_KEY,authDomain:import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,projectId:import.meta.env.VITE_FIREBASE_PROJECT_ID,storageBucket:import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,messagingSenderId:import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,appId:import.meta.env.VITE_FIREBASE_APP_ID,databaseURL:import.meta.env.VITE_FIREBASE_DATABASE_URL};
+const firebaseConfig={
+  apiKey:"AIzaSyAU8rsXXOroz21z5vJiHnkW2SlD-DBiLQ0",
+  authDomain:"bart-9bc5e.firebaseapp.com",
+  databaseURL:"https://bart-9bc5e-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"bart-9bc5e",
+  storageBucket:"bart-9bc5e.firebasestorage.app",
+  messagingSenderId:"537404181025",
+  appId:"1:537404181025:web:bd86d6110aff60b7cef160",
+  measurementId:"G-Q9XCYMGWWS"
+};
 let app=null,auth=null,db=null,rtdb=null,user=null,activeId=null,history=[],attachments=[],phoneConfirmation=null,recaptcha=null;
 const fbReady=!!(firebaseConfig.apiKey&&firebaseConfig.projectId&&firebaseConfig.appId);
 if(fbReady){try{app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);if(firebaseConfig.databaseURL)rtdb=getDatabase(app);onAuthStateChanged(auth,async u=>{user=u;renderAuth();if(u){if(rtdb){dbSet(dbRef(rtdb,`users/${u.uid}/presence`),{online:true,lastSeen:Date.now()}).catch(()=>{});}await loadChats();}else{history=[];renderHistory();}})}catch(e){console.warn('Firebase config error',e)}}
